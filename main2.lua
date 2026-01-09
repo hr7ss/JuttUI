@@ -42,7 +42,7 @@ function Library:CreateWindow(config)
     local topbar = Instance.new("Frame")
     topbar.Size = UDim2.new(1,0,0,30)
     topbar.BackgroundTransparency = 0.3
-    topbar.BackgroundColor3 = Color3.fromRGB(35,35,35)
+    topbar.BackgroundColor3 = Color3.fromRGB(0,0,255)
     topbar.Parent = main
     Instance.new("UICorner", topbar).CornerRadius = UDim.new(0,10)
 
