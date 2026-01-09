@@ -8,7 +8,32 @@ local UserInputService = game:GetService("UserInputService")
 local Library = {}
 Library.Windows = {}
 
+----------------------------------------------------------------
+-- Field positions (edit / extend these for your game)
+----------------------------------------------------------------
+local FieldPositions = {
+    -- You measured this one:
+    ["Dandelion Field"] = CFrame.new(-31.7417526, 3.99718046, 217.373293),
+    ["Clover Field"]     = CFrame.new(152.238403, -4.55984797e-08, 0),
+    ["Spider Field"]     = CFrame.new(0, 0, 0),
+    ["Bamboo Field"]     = CFrame.new(0, 0, 0),
+    ["Strawberry Field"] = CFrame.new(-87.5589981, 3.99718094, 117.598518)
+
+    -- Add the rest of your 23 fields here:
+    -- ["Sunflower Field"]  = CFrame.new(0, 0, 0),
+    -- ["Rose Field"]       = CFrame.new(0, 0, 0),
+    -- ...
+}
+Library.FieldPositions = FieldPositions
+
+-- Optional helper
+function Library:GetFieldCFrame(name)
+    return FieldPositions[name]
+end
+
+----------------------------------------------------------------
 -- Create Window
+----------------------------------------------------------------
 function Library:CreateWindow(config)
     local window = {}
     window.Tabs = {}
