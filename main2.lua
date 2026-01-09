@@ -1,8 +1,3 @@
--- =====================================
--- Rayfield-style UI Library (Single-file)
--- Always-on-top / Executor ready
--- =====================================
-
 -- Services
 local Players = game:GetService("Players")
 local CoreGui = game:GetService("CoreGui")
