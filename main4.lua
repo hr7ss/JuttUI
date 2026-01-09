@@ -180,6 +180,75 @@ function Library:CreateWindow(config)
                 end
             end)
 
+                    -- Add Selector (click to cycle through options)
+        function tab:AddSelector(config)
+            local selector = Instance.new("TextButton")
+            selector.Size = UDim2.fromOffset(340, 35)
+            selector.Position = UDim2.fromOffset(10, (#self.Elements * 45))
+            selector.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+            selector.TextColor3 = Color3.new(1, 1, 1)
+            selector.Font = Enum.Font.Gotham
+            selector.TextSize = 14
+            selector.Parent = content
+            Instance.new("UICorner", selector).CornerRadius = UDim.new(0, 5)
+
+            local options = config.Options or {}
+            local label = config.Name or "Select"
+            local index = 1
+
+            local function updateText()
+                if #options == 0 then
+                    selector.Text = label .. ": (none)"
+                else
+                    selector.Text = string.format("%s: %s", label, tostring(options[index]))
+                end
+            end
+
+            local function setOption(i)
+                if #options == 0 then return end
+                index = i
+                if index < 1 then index = 1 end
+                if index > #options then index = #options end
+                updateText()
+                if config.Callback then
+                    config.Callback(options[index], index)
+                end
+            end
+
+            selector.MouseButton1Click:Connect(function()
+                if #options == 0 then return end
+                local newIndex = index + 1
+                if newIndex > #options then
+                    newIndex = 1
+                end
+                setOption(newIndex)
+            end)
+
+            updateText()
+            table.insert(self.Elements, selector)
+
+            -- return small API so you can read/change it from outside
+            return {
+                Get = function()
+                    return options[index], index
+                end,
+                Set = function(valueOrIndex)
+                    if typeof(valueOrIndex) == "number" then
+                        if valueOrIndex >= 1 and valueOrIndex <= #options then
+                            setOption(valueOrIndex)
+                        end
+                    else
+                        for i, v in ipairs(options) do
+                            if v == valueOrIndex then
+                                setOption(i)
+                                break
+                            end
+                        end
+                    end
+                end,
+                Button = selector
+            }
+        end
             table.insert(self.Elements, btn)
         end
 
