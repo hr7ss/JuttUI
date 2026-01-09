@@ -50,7 +50,7 @@ function Library:CreateWindow(config)
         openSize.X.Scale,
         openSize.X.Offset,
         0,
-        topbar.Size.Y.Offset + 10 -- only show topbar; tweak if you want
+        topbar.Size.Y.Offset + 10
     )
 
     local isOpen = true
@@ -67,7 +67,7 @@ function Library:CreateWindow(config)
     ArrowButton.TextSize = 16
     ArrowButton.Parent = topbar
 
-    local tweenInfo = TweenInfo.new(
+    local windowTweenInfo = TweenInfo.new(
         0.25,
         Enum.EasingStyle.Quad,
         Enum.EasingDirection.Out
@@ -77,7 +77,7 @@ function Library:CreateWindow(config)
         isOpen = not isOpen
         local targetSize = isOpen and openSize or collapsedSize
 
-        TweenService:Create(main, tweenInfo, { Size = targetSize }):Play()
+        TweenService:Create(main, windowTweenInfo, { Size = targetSize }):Play()
         ArrowButton.Text = isOpen and "˄" or "˅"
     end
 
@@ -187,71 +187,180 @@ function Library:CreateWindow(config)
         end
 
         ----------------------------------------------------------------
-        -- Add Selector (click to cycle through options)
+        -- Add Selector (dropdown with arrow, slides open/closed)
         ----------------------------------------------------------------
         function tab:AddSelector(config)
-            local selector = Instance.new("TextButton")
-            selector.Size = UDim2.fromOffset(340, 35)
-            selector.Position = UDim2.fromOffset(10, (#self.Elements * 45))
-            selector.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-            selector.TextColor3 = Color3.new(1, 1, 1)
-            selector.Font = Enum.Font.Gotham
-            selector.TextSize = 14
-            selector.Parent = content
-            Instance.new("UICorner", selector).CornerRadius = UDim.new(0, 5)
-
+            local labelText = config.Name or "Select"
             local options = config.Options or {}
-            local label = config.Name or "Select"
-            local index = 1
+            local currentIndex = 1
 
-            local function updateText()
-                if #options == 0 then
-                    selector.Text = label .. ": (none)"
+            -- Container for header + dropdown list
+            local container = Instance.new("Frame")
+            container.Size = UDim2.fromOffset(340, 35)
+            container.Position = UDim2.fromOffset(10, (#self.Elements * 45))
+            container.BackgroundTransparency = 1
+            container.Parent = content
+
+            -- Header button (shows current selection)
+            local header = Instance.new("TextButton")
+            header.Size = UDim2.new(1, 0, 1, 0)
+            header.Position = UDim2.fromOffset(0, 0)
+            header.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+            header.TextColor3 = Color3.new(1, 1, 1)
+            header.Font = Enum.Font.Gotham
+            header.TextSize = 14
+            header.TextXAlignment = Enum.TextXAlignment.Left
+            header.Parent = container
+            Instance.new("UICorner", header).CornerRadius = UDim.new(0, 5)
+
+            -- Text padding
+            local padding = Instance.new("UIPadding")
+            padding.PaddingLeft = UDim.new(0, 8)
+            padding.Parent = header
+
+            -- Arrow on the right
+            local arrow = Instance.new("TextLabel")
+            arrow.Size = UDim2.fromOffset(20, 35)
+            arrow.AnchorPoint = Vector2.new(1, 0)
+            arrow.Position = UDim2.new(1, -4, 0, 0)
+            arrow.BackgroundTransparency = 1
+            arrow.Text = "˅"
+            arrow.TextColor3 = Color3.new(1, 1, 1)
+            arrow.Font = Enum.Font.GothamBold
+            arrow.TextSize = 16
+            arrow.Parent = header
+
+            -- Dropdown list frame
+            local listFrame = Instance.new("Frame")
+            listFrame.Size = UDim2.fromOffset(340, 0)
+            listFrame.Position = UDim2.fromOffset(0, 35)
+            listFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+            listFrame.BorderSizePixel = 0
+            listFrame.Visible = false
+            listFrame.ClipsDescendants = true
+            listFrame.Parent = container
+            Instance.new("UICorner", listFrame).CornerRadius = UDim.new(0, 5)
+
+            local layout = Instance.new("UIListLayout")
+            layout.FillDirection = Enum.FillDirection.Vertical
+            layout.SortOrder = Enum.SortOrder.LayoutOrder
+            layout.Parent = listFrame
+
+            local optionButtons = {}
+            local itemHeight = 28
+            local dropdownHeight = math.max(#options, 1) * itemHeight
+
+            -- Helper: update header text based on selection
+            local function updateHeaderText()
+                local current = options[currentIndex]
+                if current then
+                    header.Text = string.format("%s: %s", labelText, tostring(current))
                 else
-                    selector.Text = string.format("%s: %s", label, tostring(options[index]))
+                    header.Text = labelText .. ": (none)"
                 end
             end
 
-            local function setOption(i)
-                if #options == 0 then return end
-                index = math.clamp(i, 1, #options)
-                updateText()
-                if config.Callback then
-                    config.Callback(options[index], index)
+            -- Create option buttons
+            for i, opt in ipairs(options) do
+                local optBtn = Instance.new("TextButton")
+                optBtn.Size = UDim2.new(1, -8, 0, itemHeight)
+                optBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+                optBtn.TextColor3 = Color3.new(1, 1, 1)
+                optBtn.Font = Enum.Font.Gotham
+                optBtn.TextSize = 14
+                optBtn.Text = tostring(opt)
+                optBtn.Parent = listFrame
+
+                local optPadding = Instance.new("UIPadding")
+                optPadding.PaddingLeft = UDim.new(0, 8)
+                optPadding.Parent = optBtn
+
+                optBtn.MouseButton1Click:Connect(function()
+                    currentIndex = i
+                    updateHeaderText()
+                    if config.Callback then
+                        config.Callback(options[currentIndex], currentIndex)
+                    end
+                    -- close dropdown with tween
+                    setOpen(false)
+                end)
+
+                table.insert(optionButtons, optBtn)
+            end
+
+            -- Tween logic for opening/closing
+            local dropdownTweenInfo = TweenInfo.new(
+                0.15,
+                Enum.EasingStyle.Quad,
+                Enum.EasingDirection.Out
+            )
+
+            local open = false
+            local currentTween
+
+            function setOpen(state)
+                if open == state then return end
+                open = state
+                arrow.Text = open and "˄" or "˅"
+
+                if currentTween then
+                    currentTween:Cancel()
+                    currentTween = nil
+                end
+
+                if open then
+                    listFrame.Visible = true
+                    currentTween = TweenService:Create(
+                        listFrame,
+                        dropdownTweenInfo,
+                        { Size = UDim2.fromOffset(340, dropdownHeight) }
+                    )
+                    currentTween:Play()
+                else
+                    currentTween = TweenService:Create(
+                        listFrame,
+                        dropdownTweenInfo,
+                        { Size = UDim2.fromOffset(340, 0) }
+                    )
+                    currentTween.Completed:Connect(function()
+                        if not open then
+                            listFrame.Visible = false
+                        end
+                    end)
+                    currentTween:Play()
                 end
             end
 
-            selector.MouseButton1Click:Connect(function()
-                if #options == 0 then return end
-                local newIndex = index + 1
-                if newIndex > #options then
-                    newIndex = 1
-                end
-                setOption(newIndex)
+            header.MouseButton1Click:Connect(function()
+                setOpen(not open)
             end)
 
-            updateText()
-            table.insert(self.Elements, selector)
+            updateHeaderText()
+            table.insert(self.Elements, container)
 
+            -- Public API
             return {
                 Get = function()
-                    return options[index], index
+                    return options[currentIndex], currentIndex
                 end,
                 Set = function(valueOrIndex)
                     if typeof(valueOrIndex) == "number" then
                         if valueOrIndex >= 1 and valueOrIndex <= #options then
-                            setOption(valueOrIndex)
+                            currentIndex = valueOrIndex
+                            updateHeaderText()
                         end
                     else
                         for i, v in ipairs(options) do
                             if v == valueOrIndex then
-                                setOption(i)
+                                currentIndex = i
+                                updateHeaderText()
                                 break
                             end
                         end
                     end
                 end,
-                Button = selector,
+                Header = header,
+                ListFrame = listFrame,
             }
         end
 
