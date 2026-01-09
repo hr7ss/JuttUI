@@ -47,12 +47,13 @@ function Library:CreateWindow(config)
     Instance.new("UICorner", topbar).CornerRadius = UDim.new(0,10)
 
     local CloseButton = Instance.new("TextButton")
-    CloseButton.size = = UDim2.new(1,1,0.5)
-    CloseButton.BackgroundColor3 = Color3.fromRGB(255,0,0)
-    CloseButton.topbar = main
+    CloseButton.Size = UDim2.new(1, 0, 0.5, 0)
+    CloseButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+    CloseButton.Parent = main
 
-    if CloseButton.MouseButton1Click then
-        main.visible = false
+    CloseButton.MouseButton1Click:Connect(function()
+        main.Visible = false
+    end)
 
     -- Dragging
     local dragging = false
