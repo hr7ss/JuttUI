@@ -27,7 +27,7 @@ function Library:CreateWindow(config)
     main.AnchorPoint = Vector2.new(0.5, 0.5)
     main.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
     main.BorderSizePixel = 0
-    main.ClipsDescendants = true -- hide contents when collapsed
+    main.ClipsDescendants = true
     main.Parent = gui
 
     -- Rounded corners
@@ -50,7 +50,7 @@ function Library:CreateWindow(config)
         openSize.X.Scale,
         openSize.X.Offset,
         0,
-        topbar.Size.Y.Offset + 10 -- only show bar (tweak if needed)
+        topbar.Size.Y.Offset + 10 -- only show topbar; tweak if you want
     )
 
     local isOpen = true
@@ -61,7 +61,7 @@ function Library:CreateWindow(config)
     ArrowButton.AnchorPoint = Vector2.new(1, 0.5)
     ArrowButton.Position = UDim2.new(1, -10, 0.5, 0)
     ArrowButton.BackgroundTransparency = 1
-    ArrowButton.Text = "˄" -- up when open
+    ArrowButton.Text = "˄"
     ArrowButton.TextColor3 = Color3.new(1, 1, 1)
     ArrowButton.Font = Enum.Font.GothamBold
     ArrowButton.TextSize = 16
@@ -116,7 +116,9 @@ function Library:CreateWindow(config)
     window.MainFrame = main
     window.Topbar = topbar
 
+    ----------------------------------------------------------------
     -- Tab creation
+    ----------------------------------------------------------------
     function window:CreateTab(name)
         local tab = {}
         tab.Elements = {}
@@ -154,7 +156,8 @@ function Library:CreateWindow(config)
             local state = false
             toggle.MouseButton1Click:Connect(function()
                 state = not state
-                toggle.BackgroundColor3 = state and Color3.fromRGB(0, 120, 255) or Color3.fromRGB(30, 30, 30)
+                toggle.BackgroundColor3 = state and Color3.fromRGB(0, 120, 255)
+                    or Color3.fromRGB(30, 30, 30)
                 if config.Callback then
                     config.Callback(state)
                 end
@@ -180,7 +183,12 @@ function Library:CreateWindow(config)
                 end
             end)
 
-                    -- Add Selector (click to cycle through options)
+            table.insert(self.Elements, btn)
+        end
+
+        ----------------------------------------------------------------
+        -- Add Selector (click to cycle through options)
+        ----------------------------------------------------------------
         function tab:AddSelector(config)
             local selector = Instance.new("TextButton")
             selector.Size = UDim2.fromOffset(340, 35)
@@ -206,9 +214,7 @@ function Library:CreateWindow(config)
 
             local function setOption(i)
                 if #options == 0 then return end
-                index = i
-                if index < 1 then index = 1 end
-                if index > #options then index = #options end
+                index = math.clamp(i, 1, #options)
                 updateText()
                 if config.Callback then
                     config.Callback(options[index], index)
@@ -227,7 +233,6 @@ function Library:CreateWindow(config)
             updateText()
             table.insert(self.Elements, selector)
 
-            -- return small API so you can read/change it from outside
             return {
                 Get = function()
                     return options[index], index
@@ -246,10 +251,8 @@ function Library:CreateWindow(config)
                         end
                     end
                 end,
-                Button = selector
+                Button = selector,
             }
-        end
-            table.insert(self.Elements, btn)
         end
 
         table.insert(window.Tabs, tab)
